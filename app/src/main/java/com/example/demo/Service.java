@@ -4,13 +4,15 @@ import android.util.JsonWriter;
 
 import androidx.annotation.NonNull;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -37,16 +39,14 @@ public class Service {
             .build();
     final static private MediaType JSON = MediaType.get("application/json; charset=utf-8");
     final static private int NUM_CORES = Runtime.getRuntime().availableProcessors();
-    static Executor m_executor = new ThreadPoolExecutor(
-            NUM_CORES * 2,
-            NUM_CORES * 2,
-            60L,
-            TimeUnit.SECONDS,
-            new LinkedBlockingDeque<Runnable>()
-    );
-    final static private String baseURL = "http://localhost:3000";
+    final static private String baseURL = "http://10.0.2.2:3000";
 
-    public static String createToken(String type, String payload) {
+    private static String getToken(String jsonString) throws JSONException {
+        JSONObject json = new JSONObject(jsonString);
+        return json.getString("token");
+    }
+
+    public static void createToken(String type, String payload, TokenCallback callback) {
         try {
             StringWriter sw = new StringWriter();
             JsonWriter requestPayload = new JsonWriter(sw);
@@ -60,12 +60,25 @@ public class Service {
 
             RequestBody body = RequestBody.create(sw.toString(), JSON);
             Request request = new Request.Builder().url(baseURL + "/token").post(body).build();
-            Response response = httpClient.newCall(request).execute();
+            httpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    callback.onFail(e.getMessage());
+                }
 
-            if (response != null && response)
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    if (!response.isSuccessful()) return;
+                    try {
+                        JSONObject json = new JSONObject(response.body().string());
+                        callback.onComplete(json.getString("token"));
+                    } catch (JSONException e) {
+                        callback.onFail(e.getMessage());
+                    }
+                }
+            });
         } catch (IOException ioe) {
-
+            callback.onFail(ioe.getMessage());
         }
-        return "";
     }
 }

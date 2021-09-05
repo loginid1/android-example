@@ -7,8 +7,8 @@ public class ApplicationData extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        final String BASE_URL = "https://691181e0-d24a-11eb-b6c8-af0cb09f6ea8.sandbox-usw1.api.loginid.io";
-        final String CLIENT_ID = "spBnuRjKo-eMPKpol191bGezLQEy6GMzboarwDvsHQjuHEi5-JCtAlfXzVCv_492-xI5wMlRhpOe9bv4oDxfNA==";
+        final String BASE_URL = "https://e385f8a0-0e60-11ec-b42a-bb8e0fc28366.usw1.loginid.io";
+        final String CLIENT_ID = "GoZseD8OHWX3evR9GR2LtNBwWZ31lptN8IGeWNSdl7JL_XXzWEz6eolfwogIdyU8KsoiDS6mB_LbnUI_3_sOAA==";
 
         LoginApi.client().configure(this, CLIENT_ID, BASE_URL);
     }
