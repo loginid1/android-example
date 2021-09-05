@@ -39,27 +39,15 @@ public class Service {
             .build();
     final static private MediaType JSON = MediaType.get("application/json; charset=utf-8");
     final static private int NUM_CORES = Runtime.getRuntime().availableProcessors();
-    final static private String baseURL = "http://10.0.2.2:3000";
-
-    private static String getToken(String jsonString) throws JSONException {
-        JSONObject json = new JSONObject(jsonString);
-        return json.getString("token");
-    }
+    final static private String baseURL = "http://10.0.2.2:3000/token";
 
     public static void createToken(String type, String payload, TokenCallback callback) {
         try {
-            StringWriter sw = new StringWriter();
-            JsonWriter requestPayload = new JsonWriter(sw);
-            requestPayload.beginObject().name("type").value(type);
-
-            if (payload != null) {
-                requestPayload.name("payload").value(payload);
-            }
-
-            requestPayload.endObject();
-
-            RequestBody body = RequestBody.create(sw.toString(), JSON);
-            Request request = new Request.Builder().url(baseURL + "/token").post(body).build();
+            String[] payloadValues = {
+                    "type", type,
+                    "payload", payload
+            };
+            Request request = createRequest("", payloadValues);
             httpClient.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -80,5 +68,47 @@ public class Service {
         } catch (IOException ioe) {
             callback.onFail(ioe.getMessage());
         }
+    }
+
+    public static void verifyToken(String jwt, TokenCallback callback) {
+        try {
+            String[] payloadValues = { "token", jwt };
+            Request request = createRequest("/verify", payloadValues);
+            httpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    callback.onFail(e.getMessage());
+                }
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        callback.onComplete(true);
+                    } else {
+                        callback.onComplete(false);
+                    }
+                }
+            });
+        } catch (IOException ioe) {
+            callback.onFail(ioe.getMessage());
+        }
+    }
+
+    private static Request createRequest(String suffix, String[] args) throws IOException {
+        StringWriter sw = new StringWriter();
+        JsonWriter requestPayload = new JsonWriter(sw);
+        requestPayload.beginObject();
+
+        for (int i = 0; i < args.length; i += 2) {
+            String key = String.valueOf(args[i]);
+            String value = String.valueOf(args[i + 1]);
+            requestPayload.name(key).value(value);
+        }
+
+        requestPayload.endObject();
+        RequestBody body = RequestBody.create(sw.toString(), JSON);
+        Request request = new Request.Builder().url(baseURL + suffix).post(body).build();
+
+        return request;
     }
 }

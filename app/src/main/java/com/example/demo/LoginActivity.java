@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
@@ -26,8 +27,8 @@ public class LoginActivity extends AppCompatActivity {
         //check if signedIn
         if (LoginApi.client().hasAccount() && LoginApi.client().isLoggedIn()) {
             // redirect user to home page directly
-            //goToHome();
-            //return;
+            goToHome(LoginApi.client().getCurrentToken());
+            return;
         }
 
         // handle register button
@@ -48,21 +49,17 @@ public class LoginActivity extends AppCompatActivity {
             public void onComplete(RegisterResponse response) {
                 if (response.success) {
                     // go to home activity
-                    //goToHome();
-                    Log.i(TAG, "GOOD");
+                    goToHome(response.jwt);
                 } else {
                     // display error message as toast
-                    Log.e(TAG, "Register error: " + response.errorMessage);
-                    Toast toast = Toast.makeText(LoginActivity.this, "Error: " + response.errorMessage, Toast.LENGTH_LONG);
-                    toast.setGravity(Gravity.TOP, 0, 48);
-                    toast.show();
+                    displayToast(response.errorMessage);
                 }
             }
         };
 
         final TextInputEditText usernameInputText = findViewById(R.id.usernameInputText);
         String username = usernameInputText.getText().toString();
-        Service.createToken("auth.register", null, new TokenCallback() {
+        Service.createToken("auth.register", null, new TokenCallback<String>() {
             @Override
             public void onComplete(String token) {
                 RegistrationOptions options = RegistrationOptions.buildAuth(token);
@@ -76,22 +73,41 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFail(String message) {
-                //displayToast(message);
-                Log.i("FIDO_MESSAGE", message);
+                displayToast(message);
             }
         });
-
-        //LoginApi.client().registerWithFido2(this, username, null, registerCallback);
     }
 
-    private void goToHome() {
+    private void goToHome(String jwt) {
+        Service.verifyToken(jwt, new TokenCallback<Boolean>() {
+            @Override
+            public void onComplete(Boolean result) {
+                if (result) {
+                    Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    displayToast("Invalid Token");
+                }
+            }
 
+            @Override
+            public void onFail(String message) {
+                displayToast(message);
+            }
+        });
     }
 
     private void displayToast(String message) {
-        Log.e(TAG,  message);
-        Toast toast = Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG);
-        toast.setGravity(Gravity.TOP, 0, 48);
-        toast.show();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG,  message);
+                Toast toast = Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG);
+                toast.setGravity(Gravity.TOP, 0, 48);
+                toast.show();
+            }
+        });
     }
 }
