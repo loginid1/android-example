@@ -9,6 +9,9 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -41,13 +44,9 @@ public class Service {
     final static private int NUM_CORES = Runtime.getRuntime().availableProcessors();
     final static private String baseURL = "http://10.0.2.2:3000/token";
 
-    public static void createToken(String type, String payload, TokenCallback callback) {
+    public static void createToken(HashMap payload, TokenCallback callback) {
         try {
-            String[] payloadValues = {
-                    "type", type,
-                    "payload", payload
-            };
-            Request request = createRequest("", payloadValues);
+            Request request = createRequest("", payload);
             httpClient.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -72,8 +71,9 @@ public class Service {
 
     public static void verifyToken(String jwt, TokenCallback callback) {
         try {
-            String[] payloadValues = { "token", jwt };
-            Request request = createRequest("/verify", payloadValues);
+            HashMap payload = new HashMap();
+            payload.put("token", jwt);
+            Request request = createRequest("/verify", payload);
             httpClient.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
@@ -94,14 +94,17 @@ public class Service {
         }
     }
 
-    private static Request createRequest(String suffix, String[] args) throws IOException {
+    private static Request createRequest(String suffix, HashMap payload) throws IOException {
         StringWriter sw = new StringWriter();
         JsonWriter requestPayload = new JsonWriter(sw);
         requestPayload.beginObject();
 
-        for (int i = 0; i < args.length; i += 2) {
-            String key = String.valueOf(args[i]);
-            String value = String.valueOf(args[i + 1]);
+        Iterator it = payload.entrySet().iterator();
+
+        while(it.hasNext()) {
+            Map.Entry pair = (Map.Entry) it.next();
+            String key = pair.getKey().toString();
+            String value = pair.getValue().toString();
             requestPayload.name(key).value(value);
         }
 

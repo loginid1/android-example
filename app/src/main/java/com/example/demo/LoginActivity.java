@@ -2,14 +2,13 @@ package com.example.demo;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.HashMap;
 
 import login.api.AuthenticateCallback;
 import login.api.LoginApi;
@@ -63,14 +62,17 @@ public class LoginActivity extends AppCompatActivity {
                     goToHome(response.jwt);
                 } else {
                     // display error message as toast
-                    displayToast(response.errorMessage);
+                    CustomToast.displayError(LoginActivity.this, response.errorMessage);
                 }
             }
         };
 
         final TextInputEditText usernameInputText = findViewById(R.id.usernameInputText);
-        String username = usernameInputText.getText().toString();
-        Service.createToken("auth.register", null, new TokenCallback<String>() {
+        final String username = usernameInputText.getText().toString();
+        final HashMap tokenParams = new HashMap();
+        tokenParams.put("type", "auth.register");
+
+        Service.createToken(tokenParams, new TokenCallback<String>() {
             @Override
             public void onComplete(String token) {
                 RegistrationOptions options = RegistrationOptions.buildAuth(token);
@@ -84,7 +86,7 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFail(String message) {
-                displayToast(message);
+                CustomToast.displayError(LoginActivity.this, message);
             }
         });
     }
@@ -101,14 +103,16 @@ public class LoginActivity extends AppCompatActivity {
                     goToHome(response.jwt);
                 } else {
                     // display error message as toast
-                    displayToast(response.errorMessage);
+                    CustomToast.displayError(LoginActivity.this, response.errorMessage);
                 }
             }
         };
 
         final TextInputEditText usernameInputText = findViewById(R.id.usernameInputText);
-        String username = usernameInputText.getText().toString();
-        Service.createToken("auth.login", null, new TokenCallback<String>() {
+        final String username = usernameInputText.getText().toString();
+        final HashMap tokenParams = new HashMap();
+        tokenParams.put("type", "auth.login");
+        Service.createToken(tokenParams, new TokenCallback<String>() {
             @Override
             public void onComplete(String token) {
                 AuthenticationOptions options = AuthenticationOptions.buildAuth(token);
@@ -122,7 +126,7 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFail(String message) {
-                displayToast(message);
+                CustomToast.displayError(LoginActivity.this, message);
             }
         });
     }
@@ -140,28 +144,13 @@ public class LoginActivity extends AppCompatActivity {
                     startActivity(intent);
                     finish();
                 } else {
-                    displayToast("Invalid Token");
+                    CustomToast.displayError(LoginActivity.this, "Invalid token");
                 }
             }
 
             @Override
             public void onFail(String message) {
-                displayToast(message);
-            }
-        });
-    }
-
-    /**
-     * function to display a toast message
-     */
-    private void displayToast(String message) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Log.e(TAG,  message);
-                Toast toast = Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG);
-                toast.setGravity(Gravity.TOP, 0, 48);
-                toast.show();
+                CustomToast.displayError(LoginActivity.this, message);
             }
         });
     }

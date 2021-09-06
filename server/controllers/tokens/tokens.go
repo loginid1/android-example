@@ -22,6 +22,7 @@ type TokenRequest struct {
 	Type string `json:"type"`
 	TXPayload string `json:"tx_payload"`
 	Nonce string `json:"nonce"`
+	Username string `json:"username"`
 }
 
 type Token struct { 
@@ -173,9 +174,13 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 		tokenBody["nonce"] = uuid.NewString()
 	}
 
+	if tk.Username != "" { 
+		tokenBody["username"] = tk.Username
+	}
+
 	if tk.TXPayload != "" {
 		hash := sha256.Sum256([]byte(tk.TXPayload))
-		ph := base64.RawStdEncoding.EncodeToString(hash[:])
+		ph := base64.RawURLEncoding.EncodeToString(hash[:])
 		tokenBody["payload_hash"] = ph
 	}
 
