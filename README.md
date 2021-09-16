@@ -29,3 +29,13 @@ go run main.go
 ```
 
 ### Running the Application
+
+Use Android Studio or any other tool that can run this application on a emulator. This demo was designed to run on a emulator. If you choose to run it on a real device, change the `baseURL` in the `Service` to whatever IP/hostname and port needed to network with your phone.
+
+### Registering a Fingerprint on Emulator
+
+There is minor differences between emulators, but the process is almost the same. You would have to go the emulator settings and set up the fingerprint. Go to `Fingerprint` option under `Extended Controls` to "touch" and register the fingerprint. Here is an example with Pixel 3 emulator:
+
+![Registering Fingerprint](fingerprint.gif)
+
+From here you can run the application in an emulator and use the `Fingerprint` option in `Extended Controls` to "touch" during the biometric prompt.
