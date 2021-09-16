@@ -14,6 +14,21 @@ BASE_URL=                            #This is the base url value found on the da
 PRIVATE_KEY=                         #This is the private key associated with client ID.
 ```
 
+You would also have to edit `ApplicationData` and change the `BASE_URL` and `CLIENT_ID` variables as well.
+
+```
+public class ApplicationData extends Application {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        final String BASE_URL = "<BASE_URL>";
+        final String CLIENT_ID = "<CLIENT_ID>";
+
+        LoginApi.client().configure(this, CLIENT_ID, BASE_URL);
+    }
+}
+```
+
 ## How to Run
 
 ```
