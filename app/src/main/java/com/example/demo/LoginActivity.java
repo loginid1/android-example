@@ -2,14 +2,15 @@ package com.example.demo;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.HashMap;
 
+import java.util.HashMap;
 import login.api.AuthenticateCallback;
 import login.api.LoginApi;
 import login.api.RegisterCallback;
