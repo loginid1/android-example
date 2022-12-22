@@ -5,6 +5,16 @@
 - Android Studio
 - Go
 
+## Setup
+
+Create a mobile application on the [admin dashboard](https://usw1.loginid.io/en/login). Make sure you create and attach an API credential to it. More information on how to do this [here](https://docs.loginid.io/Guides/Miscellaneous/api-service-tokens#initial-api-credential-setup).
+
+This is how your mobile client is going to look like:
+
+![Overview Client](over-view.jpg)
+
+![Info Client](info.jpg)
+
 ## env
 
 A .env file is needed in the `/server` directory with the following variables:
@@ -13,6 +23,15 @@ A .env file is needed in the `/server` directory with the following variables:
 BASE_URL=                            #This is the base url value found on the dashboard.
 PRIVATE_KEY=                         #This is the private key associated with client ID.
 ```
+
+This is an example:
+
+```
+PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AY3si8ez/5x2yJAv\n8GCL9Jd7vIEY/nUvGjrKRBWY7eGhR........il\n-----END PRIVATE KEY-----
+BASE_URL=https://6b5bc0d0-823b-11ed-830b-534c6a100b09.usw1.loginid.io
+```
+
+Note the `\n` on the newlines.
 
 You would also have to edit `ApplicationData` and change the `BASE_URL` and `CLIENT_ID` variables as well.
 

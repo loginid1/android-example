@@ -1,57 +1,57 @@
 package token
 
 import (
-	"time"
-	"strings"
-	"os"
-	"encoding/json"
-	"encoding/pem"
-	"encoding/base64"
-	"net/http"	
-	"crypto/x509"
 	"crypto/ecdsa"
 	"crypto/sha256"
-	"io/ioutil"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
+	"encoding/pem"
 	"errors"
-	"github.com/google/uuid"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 	"github.com/loginid1/ios-example/server/utils"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 )
 
-type TokenRequest struct { 
-	Type string `json:"type"`
+type TokenRequest struct {
+	Type      string `json:"type"`
 	TXPayload string `json:"tx_payload"`
-	Nonce string `json:"nonce"`
-	Username string `json:"username"`
+	Nonce     string `json:"nonce"`
+	Username  string `json:"username"`
 }
 
-type Token struct { 
-	Token string `json:"token"`
-	Username string `json:"username,omitempty"`
-	Nonce string `json:"nonce,omitempty"`
+type Token struct {
+	Token       string `json:"token"`
+	Username    string `json:"username,omitempty"`
+	Nonce       string `json:"nonce,omitempty"`
 	ServerNonce string `json:"server_nonce,omitempty"`
 }
 
 type TXVerifyRequest struct {
-	Token string `json:"token"`
+	Token     string `json:"token"`
 	TXPayload string `json:"tx_payload"`
 }
 
 type Header struct {
-	Kid string `json:"kid"`
-	Alg string `json:"alg"`
+	Kid  string `json:"kid"`
+	Alg  string `json:"alg"`
 	Type string `json:"typ"`
 }
 
 type ServiceToken struct {
-	ClientID string `json:"client_id"`
-	Type string `json:"type"`
-	Iat int `json:"iat"`
-	Username string `json:"username,omitempty"`
-	UserID string `json:"user_id,omitempty"`
-	Nonce string `json:"nonce,omitempty"`
+	ClientID    string `json:"client_id"`
+	Type        string `json:"type"`
+	Iat         int    `json:"iat"`
+	Username    string `json:"username,omitempty"`
+	UserID      string `json:"user_id,omitempty"`
+	Nonce       string `json:"nonce,omitempty"`
 	ServerNonce string `json:"server_nonce,omitempty"`
-	TXHash string `json:"tx_hash,omitempty"`
+	TXHash      string `json:"tx_hash,omitempty"`
 }
 
 type ValidateTokenResponse struct {
@@ -67,7 +67,7 @@ func DecodeHeader(headerString string) (*Header, error) {
 	if decodedHeader, err = base64.RawStdEncoding.DecodeString(headerString); err != nil {
 		return nil, err
 	}
-	
+
 	h := &Header{}
 	if err := json.Unmarshal(decodedHeader, h); err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func DecodeHeader(headerString string) (*Header, error) {
 	return h, nil
 }
 
-func DecodePayload(body string) (*ServiceToken, error) { 
+func DecodePayload(body string) (*ServiceToken, error) {
 	var err error
 
 	decodePayload, err := base64.RawStdEncoding.DecodeString(body)
@@ -90,7 +90,7 @@ func DecodePayload(body string) (*ServiceToken, error) {
 	}
 
 	return &p, nil
-} 
+}
 
 func GetPublicKey(kid string) (string, error) {
 	baseUrl := os.Getenv("BASE_URL")
@@ -109,7 +109,7 @@ func GetPublicKey(kid string) (string, error) {
 	return string(bodyBytes), nil
 }
 
-func ValidateToken(parts []string) error { 
+func ValidateToken(parts []string) error {
 	if len(parts) != 3 {
 		return errors.New(ERROR_MESSAGE)
 	}
@@ -118,8 +118,8 @@ func ValidateToken(parts []string) error {
 	if err != nil {
 		return err
 	}
-	
-	if h.Alg != "ES256" { 
+
+	if h.Alg != "ES256" {
 		return errors.New(ERROR_MESSAGE)
 	}
 
@@ -142,7 +142,7 @@ func ValidateToken(parts []string) error {
 	return nil
 }
 
-func CreateToken(w http.ResponseWriter, r *http.Request) { 
+func CreateToken(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var tk TokenRequest
 	err := decoder.Decode(&tk)
@@ -151,7 +151,7 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(tk.Type) == 0 { 
+	if len(tk.Type) == 0 {
 		errRes.CreateSendError(w, `"type" param needed`, 400)
 		return
 	}
@@ -159,7 +159,7 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 	pkeyString := strings.ReplaceAll(os.Getenv("PRIVATE_KEY"), "\\n", "\n")
 	block, _ := pem.Decode([]byte(pkeyString))
 	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil { 
+	if err != nil {
 		errRes.CreateSendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -168,13 +168,13 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 	tokenBody["iat"] = time.Now().Unix()
 	tokenBody["type"] = tk.Type
 
-	if tk.Nonce != "" { 
+	if tk.Nonce != "" {
 		tokenBody["nonce"] = tk.Nonce
-	} else { 
+	} else {
 		tokenBody["nonce"] = uuid.NewString()
 	}
 
-	if tk.Username != "" { 
+	if tk.Username != "" {
 		tokenBody["username"] = tk.Username
 	}
 
@@ -186,12 +186,12 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, tokenBody)
 	tokenString, err := token.SignedString(key)
-	if err != nil { 
+	if err != nil {
 		errRes.CreateSendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	tokenResponse := Token {
+	tokenResponse := Token{
 		Token: tokenString,
 	}
 
@@ -201,7 +201,7 @@ func CreateToken(w http.ResponseWriter, r *http.Request) {
 	w.Write(rawBody)
 }
 
-func VerifyToken(w http.ResponseWriter, r *http.Request) { 
+func VerifyToken(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var payload Token
 	err := decoder.Decode(&payload)
@@ -216,10 +216,10 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errRes.CreateSendError(w, err.Error(), http.StatusBadRequest)
 		return
-	} 
+	}
 
 	p, err := DecodePayload(parts[1])
-	if err != nil { 
+	if err != nil {
 		errRes.CreateSendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -229,7 +229,7 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := ValidateTokenResponse {
+	res := ValidateTokenResponse{
 		Valid: true,
 	}
 
@@ -239,7 +239,7 @@ func VerifyToken(w http.ResponseWriter, r *http.Request) {
 	w.Write(rawBody)
 }
 
-func VerifyTransactionToken(w http.ResponseWriter, r *http.Request) { 
+func VerifyTransactionToken(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var payload TXVerifyRequest
@@ -255,10 +255,10 @@ func VerifyTransactionToken(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errRes.CreateSendError(w, err.Error(), http.StatusBadRequest)
 		return
-	} 
+	}
 
 	p, err := DecodePayload(parts[1])
-	if err != nil { 
+	if err != nil {
 		errRes.CreateSendError(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -272,7 +272,7 @@ func VerifyTransactionToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := ValidateTokenResponse {
+	res := ValidateTokenResponse{
 		Valid: true,
 	}
 
